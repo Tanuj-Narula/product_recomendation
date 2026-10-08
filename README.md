@@ -8,14 +8,17 @@
 ## Screenshots
 
 ### Image Search — upload any product photo, find visually similar items
+
 ![Image Search Overview](docs/screenshots/01_image_search_overview.png)
 ![Image Search Results](docs/screenshots/02_image_search_results.png)
 
 ### Text Search — natural language queries with quick-suggestion buttons
+
 ![Text Search Suggestions](docs/screenshots/03_text_search_suggestions.png)
 ![Text Search Results](docs/screenshots/04_text_search_results.png)
 
 ### Hybrid Search — fuse image + text with adjustable alpha slider
+
 ![Hybrid Search Overview](docs/screenshots/05_hybrid_search_overview.png)
 ![Hybrid Search Results](docs/screenshots/06_hybrid_search_results.png)
 
@@ -35,16 +38,16 @@ No manual tagging. No keyword rules. No category filters required.
 
 ## Tech Stack
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| **Embedding model** | CLIP ViT-B/32 (OpenAI) | Shared image+text embedding space — one model handles both modalities |
-| **Vector index** | FAISS IndexFlatIP | Exact cosine similarity search; sub-millisecond at 30K vectors |
-| **Backend API** | FastAPI + Uvicorn | Async, production-grade REST API with auto docs at `/docs` |
-| **Frontend** | Streamlit | Rapid ML UI with custom CSS for premium design |
-| **Experiment tracking** | MLflow (SQLite backend) | Logs every request: latency, query type, result count |
-| **Dataset** | Fashion Product Images (Kaggle) | 44K real fashion products with metadata |
-| **GPU acceleration** | PyTorch + CUDA 11.8 | CLIP inference on RTX 2050: ~130ms vs ~280ms on CPU |
-| **Environment** | Anaconda (Python 3.13) | Isolated, reproducible environment |
+| Layer                   | Technology                      | Why                                                                   |
+| ----------------------- | ------------------------------- | --------------------------------------------------------------------- |
+| **Embedding model**     | CLIP ViT-B/32 (OpenAI)          | Shared image+text embedding space — one model handles both modalities |
+| **Vector index**        | FAISS IndexFlatIP               | Exact cosine similarity search; sub-millisecond at 30K vectors        |
+| **Backend API**         | FastAPI + Uvicorn               | Async, production-grade REST API with auto docs at `/docs`            |
+| **Frontend**            | Streamlit                       | Rapid ML UI with custom CSS for premium design                        |
+| **Experiment tracking** | MLflow (SQLite backend)         | Logs every request: latency, query type, result count                 |
+| **Dataset**             | Fashion Product Images (Kaggle) | 44K real fashion products with metadata                               |
+| **GPU acceleration**    | PyTorch + CUDA 11.8             | CLIP inference on RTX 2050: ~130ms vs ~280ms on CPU                   |
+| **Environment**         | Anaconda (Python 3.13)          | Isolated, reproducible environment                                    |
 
 ---
 
@@ -55,47 +58,47 @@ No manual tagging. No keyword rules. No category filters required.
 ║                        USER  (Browser)                               ║
 ║                     Streamlit  :8501                                 ║
 ║                                                                      ║
-║   ┌──────────────┐   ┌──────────────┐   ┌──────────────────────┐   ║
-║   │ Image Search │   │  Text Search │   │    Hybrid Search     │   ║
-║   │  upload img  │   │  type query  │   │  img + text + alpha  │   ║
-║   └──────┬───────┘   └──────┬───────┘   └──────────┬───────────┘   ║
-╚══════════╪══════════════════╪══════════════════════╪════════════════╝
+║   ┌──────────────┐   ┌──────────────┐   ┌──────────────────────┐     ║
+║   │ Image Search │   │  Text Search │   │    Hybrid Search     │     ║
+║   │  upload img  │   │  type query  │   │  img + text + alpha  │     ║
+║   └──────┬───────┘   └──────┬───────┘   └──────────┬───────────┘     ║
+╚══════════╪══════════════════╪══════════════════════╪═════════════════╝
            │  HTTP multipart  │  HTTP form           │  HTTP multipart+form
 ╔══════════▼══════════════════▼══════════════════════▼════════════════╗
-║                      FastAPI  :8000                                  ║
-║                                                                      ║
+║                      FastAPI  :8000                                 ║
+║                                                                     ║
 ║   ┌─────────────────────────────────────────────────────────────┐   ║
 ║   │                  CLIP ViT-B/32  (GPU/CPU)                   │   ║
 ║   │                                                             │   ║
-║   │  encode_image(PIL)  ──►  512-d float32 vector              │   ║
-║   │  encode_text(str)   ──►  512-d float32 vector              │   ║
-║   │  hybrid fusion      ──►  α·img + (1-α)·txt → normalize     │   ║
+║   │  encode_image(PIL)  ──►  512-d float32 vector               │   ║
+║   │  encode_text(str)   ──►  512-d float32 vector               │   ║
+║   │  hybrid fusion      ──►  α·img + (1-α)·txt → normalize      │   ║
 ║   └───────────────────────────┬─────────────────────────────────┘   ║
-║                               │ L2-normalized 512-d vector           ║
+║                               │ L2-normalized 512-d vector          ║
 ║   ┌───────────────────────────▼─────────────────────────────────┐   ║
 ║   │              FAISS IndexFlatIP  (30K vectors)               │   ║
 ║   │                                                             │   ║
-║   │  index.search(vec, top_k)  →  scores + indices  <1ms       │   ║
+║   │  index.search(vec, top_k)  →  scores + indices  <1ms        │   ║
 ║   └───────────────────────────┬─────────────────────────────────┘   ║
-║                               │ product IDs                          ║
+║                               │ product IDs                         ║
 ║   ┌───────────────────────────▼─────────────────────────────────┐   ║
 ║   │         styles.csv  (pandas DataFrame, indexed by id)       │   ║
 ║   │  → product_name · category · gender · colour · articleType  │   ║
 ║   └─────────────────────────────────────────────────────────────┘   ║
-║                                                                      ║
+║                                                                     ║
 ║   ┌──────────────────────────────────────────────────────────────┐  ║
 ║   │  MLflow Logger  (SQLite)  — logs every request               │  ║
 ║   │  latency_ms · query_type · top_k · result_count              │  ║
 ║   └──────────────────────────────────────────────────────────────┘  ║
-╚══════════════════════════════════════════════════════════════════════╝
+╚═════════════════════════════════════════════════════════════════════╝
            │
 ╔══════════▼══════════════════════════════════════════════════════════╗
-║                       Artifacts  (disk)                              ║
-║                                                                      ║
+║                       Artifacts  (disk)                             ║
+║                                                                     ║
 ║   embeddings.npy          — (30000 × 512) float32 numpy array       ║
 ║   product_index.faiss     — FAISS binary index (~58 MB)             ║
 ║   image_ids.json          — ordered list of product IDs             ║
-╚══════════════════════════════════════════════════════════════════════╝
+╚═════════════════════════════════════════════════════════════════════╝
 ```
 
 ---
@@ -140,12 +143,12 @@ fused    = faiss.normalize_L2(fused)   # re-normalize after fusion
 results  = faiss_index.search(fused, top_k)
 ```
 
-| Alpha | Image % | Text % | Use case |
-|-------|---------|--------|----------|
-| 0.0 | 0% | 100% | Pure text search |
-| 0.3 | 30% | 70% | Color/style refinement |
-| 0.6 | 60% | 40% | Default — shape from image, detail from text |
-| 1.0 | 100% | 0% | Pure visual similarity |
+| Alpha | Image % | Text % | Use case                                     |
+| ----- | ------- | ------ | -------------------------------------------- |
+| 0.0   | 0%      | 100%   | Pure text search                             |
+| 0.3   | 30%     | 70%    | Color/style refinement                       |
+| 0.6   | 60%     | 40%    | Default — shape from image, detail from text |
+| 1.0   | 100%    | 0%     | Pure visual similarity                       |
 
 ---
 
@@ -153,15 +156,15 @@ results  = faiss_index.search(fused, top_k)
 
 **Fashion Product Images** — Kaggle (`paramaggarwal/fashion-product-images-small`)
 
-| Field | Value |
-|-------|-------|
-| Total images | 44,441 |
-| Indexed | 30,000 |
-| Metadata | `styles.csv` — id, gender, masterCategory, subCategory, articleType, baseColour, season, usage, productDisplayName |
-| Image size | 60 × 80 px (JPEG) |
-| License | CC0 Public Domain |
-| Genders | Men, Women, Boys, Girls, Unisex |
-| Categories | Apparel, Footwear, Accessories, Personal Care, Sporting Goods |
+| Field        | Value                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Total images | 44,441                                                                                                             |
+| Indexed      | 30,000                                                                                                             |
+| Metadata     | `styles.csv` — id, gender, masterCategory, subCategory, articleType, baseColour, season, usage, productDisplayName |
+| Image size   | 60 × 80 px (JPEG)                                                                                                  |
+| License      | CC0 Public Domain                                                                                                  |
+| Genders      | Men, Women, Boys, Girls, Unisex                                                                                    |
+| Categories   | Apparel, Footwear, Accessories, Personal Care, Sporting Goods                                                      |
 
 ---
 
@@ -229,19 +232,23 @@ bash run.sh
 ## API Documentation
 
 ### GET /health
+
 ```bash
 curl http://localhost:8000/health
 ```
+
 ```json
-{"status": "ok", "model_loaded": true, "index_size": 30000, "device": "cuda"}
+{ "status": "ok", "model_loaded": true, "index_size": 30000, "device": "cuda" }
 ```
 
 ### POST /recommend/image
+
 ```bash
 curl -X POST http://localhost:8000/recommend/image \
   -F "file=@shirt.jpg" \
   -G -d "top_k=10&gender=Men"
 ```
+
 ```json
 [
   {
@@ -257,6 +264,7 @@ curl -X POST http://localhost:8000/recommend/image \
 ```
 
 ### POST /recommend/text
+
 ```bash
 curl -X POST http://localhost:8000/recommend/text \
   -F "query=black slim fit jeans" \
@@ -265,6 +273,7 @@ curl -X POST http://localhost:8000/recommend/text \
 ```
 
 ### POST /recommend/hybrid
+
 ```bash
 curl -X POST http://localhost:8000/recommend/hybrid \
   -F "file=@jeans.jpg" \
@@ -273,9 +282,11 @@ curl -X POST http://localhost:8000/recommend/hybrid \
   -F "alpha=0.4" \
   -F "gender=Men"
 ```
+
 `alpha` — image weight (0.0 = pure text, 1.0 = pure image, default 0.6)
 
 ### GET /product/{product_id}
+
 ```bash
 curl http://localhost:8000/product/15970
 ```
@@ -286,29 +297,29 @@ curl http://localhost:8000/product/15970
 
 ### Retrieval Quality — `evaluation/evaluate.py` (20 queries, 30K index)
 
-| Query Type | Avg P@10 | Avg Category Consistency | Avg Latency |
-|------------|----------|--------------------------|-------------|
-| Text (10 queries) | **1.00** | **1.00** | 50.5 ms |
-| Image (10 queries) | **0.77** | **0.77** | 75.6 ms |
-| **Overall** | **0.89** | **0.89** | **63.0 ms** |
+| Query Type         | Avg P@10 | Avg Category Consistency | Avg Latency |
+| ------------------ | -------- | ------------------------ | ----------- |
+| Text (10 queries)  | **1.00** | **1.00**                 | 50.5 ms     |
+| Image (10 queries) | **0.77** | **0.77**                 | 75.6 ms     |
+| **Overall**        | **0.89** | **0.89**                 | **63.0 ms** |
 
 Text search achieves perfect P@10 across all 10 queries (dresses, jeans, sneakers, handbags, suits, etc.).
 Image search scores 1.00 on core fashion categories (Apparel, Footwear, Accessories). Lower scores on edge-case categories (Home, Free Items) that fall outside the fashion distribution CLIP was optimized for.
 
 ### Inference Latency
 
-| Metric | CPU | GPU (RTX 2050) |
-|--------|-----|----------------|
-| Model | CLIP ViT-B/32 | CLIP ViT-B/32 |
-| Index | FAISS IndexFlatIP | FAISS IndexFlatIP |
-| Dataset | 30,000 products | 30,000 products |
-| Embedding dim | 512 | 512 |
-| FAISS search latency | < 1 ms | < 1 ms |
-| Image encode latency | ~280 ms | ~130 ms |
-| Text encode latency | ~120 ms | ~42 ms |
-| Hybrid latency | ~400 ms | ~185 ms |
-| GPU cold start | — | ~1086 ms (first request only, warmup pass eliminates this) |
-| GPU warm (subsequent) | — | ~130 ms |
+| Metric                | CPU               | GPU (RTX 2050)                                             |
+| --------------------- | ----------------- | ---------------------------------------------------------- |
+| Model                 | CLIP ViT-B/32     | CLIP ViT-B/32                                              |
+| Index                 | FAISS IndexFlatIP | FAISS IndexFlatIP                                          |
+| Dataset               | 30,000 products   | 30,000 products                                            |
+| Embedding dim         | 512               | 512                                                        |
+| FAISS search latency  | < 1 ms            | < 1 ms                                                     |
+| Image encode latency  | ~280 ms           | ~130 ms                                                    |
+| Text encode latency   | ~120 ms           | ~42 ms                                                     |
+| Hybrid latency        | ~400 ms           | ~185 ms                                                    |
+| GPU cold start        | —                 | ~1086 ms (first request only, warmup pass eliminates this) |
+| GPU warm (subsequent) | —                 | ~130 ms                                                    |
 
 ---
 
@@ -336,10 +347,10 @@ mlflow ui --port 5000
 # → http://localhost:5000 → experiment "visual-recommender"
 ```
 
-| Logged at | Parameter / Metric |
-|-----------|-------------------|
-| Startup | model_name, index_type, embedding_dim, dataset_size |
-| Per request | query_type, top_k, latency_ms, result_count |
+| Logged at   | Parameter / Metric                                  |
+| ----------- | --------------------------------------------------- |
+| Startup     | model_name, index_type, embedding_dim, dataset_size |
+| Per request | query_type, top_k, latency_ms, result_count         |
 
 ---
 
